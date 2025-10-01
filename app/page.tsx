@@ -1,103 +1,192 @@
-import Image from "next/image";
+"use client";
+
+import { useState } from "react";
+import useGetFeedbacks from "@/utils/hooks/useGetFeedback";
 
 export default function Home() {
-  return (
-    <div className="font-sans grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20">
-      <main className="flex flex-col gap-[32px] row-start-2 items-center sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={180}
-          height={38}
-          priority
-        />
-        <ol className="font-mono list-inside list-decimal text-sm/6 text-center sm:text-left">
-          <li className="mb-2 tracking-[-.01em]">
-            Get started by editing{" "}
-            <code className="bg-black/[.05] dark:bg-white/[.06] font-mono font-semibold px-1 py-0.5 rounded">
-              app/page.tsx
-            </code>
-            .
-          </li>
-          <li className="tracking-[-.01em]">
-            Save and see your changes instantly.
-          </li>
-        </ol>
+  const { feedbacks, isLoading, err, fetchFeedbacks } = useGetFeedbacks();
+  const [data, setData] = useState<FeedbackType>({
+    name: "",
+    email: "",
+    text: "",
+  });
 
-        <div className="flex gap-4 items-center flex-col sm:flex-row">
-          <a
-            className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-foreground text-background gap-2 hover:bg-[#383838] dark:hover:bg-[#ccc] font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 sm:w-auto"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={20}
-              height={20}
+  const [error, setError] = useState<ErrorType>({
+    email: "",
+    common: "",
+    name: "",
+    text: "",
+  });
+
+  const submit_feedback = async () => {
+    if (data.name.trim() === "") {
+      setError((p) => ({ ...p, name: "Name can't be empty!" }));
+      return;
+    }
+    if (data.email.trim() === "") {
+      setError((p) => ({ ...p, email: "Email can't be empty!" }));
+      return;
+    }
+    if (data.text.trim() === "") {
+      setError((p) => ({ ...p, text: "Feedback field can't be empty!" }));
+      return;
+    }
+    const fd = new FormData();
+    fd.append("data", JSON.stringify(data));
+    const res = await fetch("/api/feedback", {
+      method: "POST",
+      body: fd,
+    });
+
+    if (res.ok) {
+      const data = await res.json();
+      if (data.flag) {
+        await fetchFeedbacks();
+        setError({ name: "", common: "", email: "", text: "" });
+        setData({ name: "", email: "", text: "" });
+      } else {
+      }
+    } else {
+      setError((p) => ({ ...p, common: "form submission error!" }));
+    }
+  };
+  return (
+    <div>
+      <div className="mt-10 w-full sm:w-4/5 md:w-3/5 max-w-[800px] mx-auto">
+        <div className="card p-2 ">
+          <h1 className="text-center">FeedBack Form</h1>
+
+          {error.common && (
+            <p className="bg-red-900 my-1 text-white p-1 rounded-sm">
+              {error.common}
+            </p>
+          )}
+          <div className="my-1">
+            <h1>Name</h1>
+            <input
+              onChange={(e) => setData((p) => ({ ...p, name: e.target.value }))}
+              value={data.name}
+              className="w-full form-input"
+              type="text"
+              name=""
+              id=""
             />
-            Deploy now
-          </a>
-          <a
-            className="rounded-full border border-solid border-black/[.08] dark:border-white/[.145] transition-colors flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[#1a1a1a] hover:border-transparent font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 w-full sm:w-auto md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Read our docs
-          </a>
+            {error.name && (
+              <p className="bg-red-900 mt-1 text-white p-1 rounded-sm">
+                {error.name}
+              </p>
+            )}
+          </div>
+          <div className="my-1">
+            <h1>Email</h1>
+            <input
+              onChange={(e) =>
+                setData((p) => ({ ...p, email: e.target.value }))
+              }
+              value={data.email}
+              className="w-full form-input"
+              type="text"
+              name=""
+              id=""
+            />
+            {error.email && (
+              <p className="bg-red-900 mt-1 text-white p-1 rounded-sm">
+                {error.email}
+              </p>
+            )}
+          </div>
+
+          <div className="my-1">
+            <h1>Feedback</h1>
+            <input
+              onChange={(e) => setData((p) => ({ ...p, text: e.target.value }))}
+              value={data.text}
+              className="w-full form-input"
+              type="text"
+              name=""
+              id=""
+            />
+            {error.text && (
+              <p className="bg-red-900 mt-1 text-white p-1 rounded-sm">
+                {error.text}
+              </p>
+            )}
+          </div>
+
+          <div className="flex justify-end mt-5">
+            <button
+              onClick={submit_feedback}
+              className="btn btn-primary px-4 py-1 rounded-sm"
+              type="button"
+            >
+              Submit
+            </button>
+          </div>
         </div>
-      </main>
-      <footer className="row-start-3 flex gap-[24px] flex-wrap items-center justify-center">
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/file.svg"
-            alt="File icon"
-            width={16}
-            height={16}
-          />
-          Learn
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/window.svg"
-            alt="Window icon"
-            width={16}
-            height={16}
-          />
-          Examples
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/globe.svg"
-            alt="Globe icon"
-            width={16}
-            height={16}
-          />
-          Go to nextjs.org →
-        </a>
-      </footer>
+
+        <div className="mt-10">
+          <div>
+            {isLoading && (
+              <p className="fixed top-1/2 left-1/2 -translate-x-1/2">
+                Loading ...
+              </p>
+            )}
+          </div>
+          <div>
+            {err && (
+              <p className="fixed top-1/2 left-1/2 -translate-x-1/2 p-1 bg-red-900 text-white">
+                {err}
+              </p>
+            )}
+          </div>
+
+          <div>
+            {feedbacks
+              .sort(
+                (a, b) =>
+                  new Date(b.createdAt).getTime() -
+                  new Date(a.createdAt).getTime()
+              )
+              .map((fb) => (
+                <div key={fb.id} className="page p-2 rounded-md mt-3">
+                  <div className="flex justify-between">
+                    <div>
+                      <h1 className="font-bold">{fb.name}</h1>
+                    </div>
+                    <div className="space-x-3">
+                      <span className="px-2 bg-violet-700 rounded-sm">
+                        {get_date(fb.createdAt)}
+                      </span>
+                      <span className="px-2 bg-sky-700 rounded-sm">
+                        {get_time(fb.createdAt)}
+                      </span>
+                    </div>
+                  </div>
+                  <div>{fb.text}</div>
+                </div>
+              ))}
+          </div>
+        </div>
+      </div>
     </div>
   );
 }
+
+const get_date = (d: Date) => {
+  const date = new Date(d);
+  return `${date.getDate()}/${date.getMonth()}/${date.getFullYear()}`;
+};
+const get_time = (d: Date) => {
+  const date = new Date(d);
+  return `${date.getHours()}:${date.getMinutes()}:${date.getSeconds()}`;
+};
+
+export type FeedbackType = {
+  name: string;
+  email: string;
+  text: string;
+};
+
+export type ErrorType = FeedbackType & {
+  common: string;
+};
